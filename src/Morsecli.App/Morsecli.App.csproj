@@ -4,4 +4,9 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="Application\" />
+    <Folder Include="Presentation\" />
+  </ItemGroup>
+
 </Project>
