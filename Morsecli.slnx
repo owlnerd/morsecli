@@ -4,6 +4,7 @@
     <File Path="Directory.Build.props" />
   </Folder>
   <Folder Name="/src/">
+    <File Path="codeMap.txt" />
     <Project Path="src/Morsecli.App/Morsecli.App.csproj" Id="b7dbe8aa-44a3-42e0-9992-2eb8b5327a0a" />
   </Folder>
   <Folder Name="/tests/" />
