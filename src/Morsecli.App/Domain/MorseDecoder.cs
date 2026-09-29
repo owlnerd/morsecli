@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Morsecli.App.Domain;
+namespace Morsecli.Domain;
 
 internal class MorseDecoder
 {

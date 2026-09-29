@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
+﻿using System.Text;
 
-namespace Morsecli.App.Domain;
+namespace Morsecli.Domain;
 
 internal class MorseEncoder
 {
-    private static readonly ReadOnlyDictionary<char, string> _encodingMap = new(new Dictionary<char, string>()
+    private static readonly Dictionary<char, string> _encodingMap = new()
     {
         ['A'] = ".-",
         ['B'] = "-...",
@@ -63,52 +59,86 @@ internal class MorseEncoder
         ['_'] = "..--.-",
         ['"'] = ".-..-.",
         ['$'] = "...-..-",
-        ['@'] = ".--.-.",
-        [' '] = "/"
-    });
+        ['@'] = ".--.-."
+    };
 
-    private string SymbolSeparator { get; }
-    private string WordSeparator { get; }
-
-    public MorseEncoder(string symbolSeparator, string wordSeparator)
-    {
-        SymbolSeparator = symbolSeparator;
-        WordSeparator = wordSeparator;
-    }
+    public string SymbolSeparator { get; init; } = " ";
+    public string WordSeparator { get; init; } = " / ";
+    public bool ReduceWordSeparators { get; init; }
+    public bool DropUnencodable { get; init; }
 
     public string Encode(string input)
     {
-        StringBuilder result = new StringBuilder();
-
         input = input.Trim();
 
-        string encodedSymbol;
+        StringBuilder encoding = new StringBuilder();
 
-        if (_encodingMap.TryGetValue(input[0], out encodedSymbol))
+        bool lastSymbolIsWordSeparator = true;
+
+        foreach (char currentSymbol in input)
         {
-
-        }
-
-        for (int i = 0; i < input.Length; i++)
-        {
-            if (_encodingMap.TryGetValue(input[i], out encodedSymbol))
+            if (_encodingMap.TryGetValue(char.ToUpperInvariant(currentSymbol), out string? encodedSymbol))
             {
-                result.Append(SymbolSeparator);
-                result.Append(encodedSymbol);
+                HandleEncodable(encoding, encodedSymbol, ref lastSymbolIsWordSeparator);
             }
-            else if (!char.IsWhiteSpace(input[i]))
+            else if (char.IsWhiteSpace(currentSymbol))
             {
-                result.Append('[');
-                result.Append(input[i]);
-                result.Append(']');
-                result.Append(SymbolSeparator);
+                HandleWhiteSpace(encoding, ref lastSymbolIsWordSeparator);
             }
             else
             {
-                result.Append(WordSeparator);
+                HandleUnencodable(encoding, currentSymbol, ref lastSymbolIsWordSeparator);
             }
         }
 
-        return result.ToString();
+        string finalencoding = encoding.ToString();
+
+        return finalencoding.EndsWith(WordSeparator)
+            ? finalencoding.Substring(0, finalencoding.Length - WordSeparator.Length)
+            : finalencoding;
+    }
+
+    private void HandleEncodable(StringBuilder encoding, string encodedSymbol, ref bool lastSymbolIsWordSeparator)
+    {
+        if (!lastSymbolIsWordSeparator)
+        {
+            encoding.Append(SymbolSeparator);
+        }
+        encoding.Append(encodedSymbol);
+        lastSymbolIsWordSeparator = false;
+    }
+
+    private void HandleUnencodable(StringBuilder encoding, char input, ref bool lastSymbolIsWordSeparator)
+    {
+        if (!DropUnencodable)
+        {
+            if (!lastSymbolIsWordSeparator)
+            {
+                encoding.Append(SymbolSeparator);
+            }
+            encoding.Append('[');
+            encoding.Append(input);
+            encoding.Append(']');
+            lastSymbolIsWordSeparator = false;
+        } else
+        {
+            lastSymbolIsWordSeparator = true;
+        }
+    }
+
+    private void HandleWhiteSpace(StringBuilder encoding, ref bool lastSymbolIsWordSeparator)
+    {
+        if (ReduceWordSeparators)
+        {
+            if (!lastSymbolIsWordSeparator)
+            {
+                encoding.Append(WordSeparator);
+            }
+        }
+        else
+        {
+            encoding.Append(WordSeparator);
+        }
+        lastSymbolIsWordSeparator = true;
     }
 }
